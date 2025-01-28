@@ -35,8 +35,7 @@ inductive convr : Π {α : Ty}, (Exp α) → (Exp α) → Prop
         : convr (recN ⬝ e ⬝ f ⬝ zero) (e)
 | recN_succ {α : Ty} {n : Exp Nat} {e : Exp α} {f : Exp (Nat ⇒' α ⇒' α)}
         : convr (recN ⬝ e ⬝ f ⬝ (succ ⬝ n)) (f ⬝ n ⬝ (recN ⬝ e ⬝ f ⬝ n))
-
-
+infix : 100 " ~ " => convr
 
 
 def Ty_inter : Ty → Type
@@ -85,7 +84,7 @@ def nbe (a : Ty) (e : Exp a) : (Exp a) := reify a (Exp_inter a e)
 
 
 -- e ~ e'  implies [[e]]a = [[e']]a
-lemma convr_lemma1 {a : Ty} {e e' : Exp a} : convr e e' → ((Exp_inter a e) = (Exp_inter a e')) :=
+lemma convr_lemma1 {a : Ty} {e e' : Exp a} : e ~ e' → ((Exp_inter a e) = (Exp_inter a e')) :=
 by
   intro h
   induction h
@@ -95,7 +94,7 @@ by
     rw [ab_ih, cd_ih]
 
 -- e ~ e'  implies nbe a e = nbe a e'
-lemma soundness {a : Ty} {e e' : Exp a} : convr e e' → nbe a e = nbe a e' :=
+lemma soundness {a : Ty} {e e' : Exp a} : e ~ e' → nbe a e = nbe a e' :=
 by
   unfold nbe
   intro h1
@@ -105,18 +104,18 @@ by
 
 -- Tait-reducibility relation
 def R : (a : Ty) → (e : Exp a) → Prop
-| Ty.Nat, e       => convr e (nbe Ty.Nat e)
+| Ty.Nat, e       => e ~ (nbe Ty.Nat e)
 
-| Ty.arrow α β, e => convr e (nbe (α ⇒' β) e)  ∧  ∀ e', R α e' → R β (App e e')
+| Ty.arrow α β, e => e ~ (nbe (α ⇒' β) e)  ∧  ∀ e', R α e' → R β (App e e')
 
 -- R a e  implies  e ~ nbe a e
-lemma R_convr_nbe (h : R a e)  : convr e (nbe a e) :=
+lemma R_convr_nbe (h : R a e)  : e ~ (nbe a e) :=
   by
   cases a
   all_goals (unfold R at h); aesop
 
 -- e ~ e' implies  R α e ↔ R α e'
-lemma convr_R_iff : ∀ e e', convr e e' → (R α e ↔ R α e') :=
+lemma convr_R_iff : ∀ e e', e ~ e' → (R α e ↔ R α e') :=
   by
   induction α
   · unfold R
@@ -268,7 +267,7 @@ lemma all_R {e : Exp a} : R a e :=
           simp [reify]
           cases eq
           replace Rx := R_convr_nbe Rx; replace Ry := R_convr_nbe Ry
-          have Sx_r_S_nbex : convr (S ⬝ x) (S ⬝ (nbe (a ⇒' b ⇒' c) x)) := (convr.refl).app Rx
+          have Sx_r_S_nbex : (S ⬝ x) ~ (S ⬝ (nbe (a ⇒' b ⇒' c) x)) := (convr.refl).app Rx
           exact Sx_r_S_nbex.app Ry
         · intro z Rz
           apply (convr_R_iff (S ⬝ x ⬝ y ⬝ z) _ convr.S).mpr
@@ -293,7 +292,9 @@ lemma all_R {e : Exp a} : R a e :=
       simp [appsem]
       cases eq; simp
       simp [reify]
-      exact (convr.refl).app Rx
+      apply (convr.refl).app
+      simp [R, nbe, reify] at Rx
+      exact Rx
 
   case recN α =>
     apply And.intro
@@ -313,7 +314,7 @@ lemma all_R {e : Exp a} : R a e :=
           simp [reify]
           cases eq
           replace Re' := R_convr_nbe Re'; replace Re'' := R_convr_nbe Re''
-          have h0 : convr (recN ⬝ e') (recN ⬝ nbe α e') := (convr.refl).app Re'
+          have h0 : (recN ⬝ e') ~ (recN ⬝ nbe α e') := (convr.refl).app Re'
           exact h0.app Re''
         · intro n Rn
           have convr_n := Rn
@@ -337,10 +338,10 @@ lemma all_R {e : Exp a} : R a e :=
 
 
 -- e ~ nbe a e
-lemma convr_nbe {e : Exp a} : convr e (nbe a e) := R_convr_nbe all_R
+lemma convr_nbe {e : Exp a} : e ~ (nbe a e) := R_convr_nbe all_R
 
 -- nbe a e = nbe a e' implies e ~ e'
-lemma completeness : nbe a e = nbe a e' → convr e e' :=
+lemma completeness : nbe a e = nbe a e' → e ~ e' :=
   by
   intro eq
   apply (convr_nbe).trans
@@ -348,4 +349,4 @@ lemma completeness : nbe a e = nbe a e' → convr e e' :=
   exact convr_nbe.sym
 
 -- e ~ e' ↔ nbe a e = nbe a e'
-lemma correctness {e e' : Exp a} : convr e e' ↔ nbe a e = nbe a e' := ⟨soundness, completeness⟩
+lemma correctness {e e' : Exp a} : e ~ e' ↔ nbe a e = nbe a e' := ⟨soundness, completeness⟩

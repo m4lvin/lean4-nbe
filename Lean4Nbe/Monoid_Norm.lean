@@ -6,54 +6,31 @@ inductive Exp (α : Type)
 | app : Exp α → Exp α → Exp α
 | id  : Exp α
 | elem : α → Exp α
+infix : 100 " ⬝ " => Exp.app
 
 
 -- Didn't declare the Setoid instance for this yet
 inductive convr : (Exp α) → (Exp α) → Prop
-| assoc {e e' e'' : Exp α} : convr ((e.app e').app e'') (e.app (e'.app e''))
-| id_left {e  : Exp α}     : convr ((Exp.id).app e) (e)
-| id_right {e : Exp α}     : convr (e.app Exp.id) (e)
+| assoc {e e' e'' : Exp α} : convr ((e ⬝ e') ⬝ e'') (e ⬝ (e' ⬝ e''))
+| id_left {e  : Exp α}     : convr ((Exp.id) ⬝ e) (e)
+| id_right {e : Exp α}     : convr (e ⬝ Exp.id) (e)
 | refl     {e : Exp α}     : convr (e) (e)
 | sym      {e e' : Exp α}  : convr (e) (e') → convr (e') (e)
 | trans {e e' e'' : Exp α} : convr (e) (e') → convr (e') (e'') → convr (e) (e'')
-| app {a b c d : Exp α}    : convr (a) (b) → convr (c) (d) → convr (a.app c) (b.app d)
+| app {a b c d : Exp α}    : convr (a) (b) → convr (c) (d) → convr (a ⬝ c) (b ⬝ d)
+infix : 100 " ~ " => convr
 
 
 def eval : (Exp α) → (Exp α → Exp α)
   | Exp.app a b => (λ e => eval a (eval b e))
   | Exp.id      => id
-  | Exp.elem x  => (λ e => (Exp.elem x).app e)
+  | Exp.elem x  => (λ e => (Exp.elem x) ⬝ e)
 
 
--- ∀ b, a.app b ~ [[a]]b
-lemma eval_lemma1 (a : Exp α) : ∀ b, convr (a.app b) ((eval a) b) :=
-by
-  induction a
-  case app c d c_ih d_ih =>
-    intro b
-    specialize d_ih b
-    specialize c_ih (eval d b)
-    have h0 : convr ((c.app d).app b) (c.app (d.app b)) := convr.assoc
-    refine (convr.trans h0 ?_)
-    clear h0
-    have h0 : convr (c.app (d.app b)) (c.app (eval d b)) := convr.app (convr.refl) (d_ih)
-    refine (convr.trans h0 ?_)
-    clear h0
-    exact c_ih
-
-  case id =>
-    intro b
-    exact convr.id_left
-
-  case elem =>
-    intro b
-    exact convr.refl
-
--- a ~ b  → ∀ c, [[a]]c = [[b]]c
-lemma eval_lemma2 {a b : Exp α} (h : convr a b) : ∀ c : Exp α, (eval a) c = (eval b) c :=
+-- a ~ b  → eval a = eval b
+lemma convr_eval_eq {a b : Exp α} (h : a ~ b) : ∀ c, (eval a) c  = (eval b) c :=
 by
   induction h
-
   any_goals
     intros; aesop
 
@@ -66,13 +43,37 @@ by
     rw [cd_ih]
     rw [ab_ih]
 
+-- ∀ b, a ⬝ b ~ (eval a b)
+lemma app_eval (a : Exp α) : ∀ b, (a ⬝ b) ~ (eval a b) :=
+by
+  induction a
+  case app c d c_ih d_ih =>
+    intro b
+    unfold eval
+    specialize d_ih b
+    specialize c_ih (eval d b)
+    have h0 : ((c ⬝ d) ⬝ b) ~ (c ⬝ (d ⬝ b)) := convr.assoc
+    refine (convr.trans h0 ?_)
+    clear h0
+    have h0 : (c ⬝ (d ⬝ b)) ~ (c ⬝ (eval d b)) := convr.app (convr.refl) (d_ih)
+    refine (convr.trans h0 ?_)
+    clear h0
+    exact c_ih
+
+  case id =>
+    intro b
+    exact convr.id_left
+
+  case elem =>
+    intro b
+    exact convr.refl
 
 def reify (f : Exp α → Exp α) : (Exp α) := f Exp.id
 
 def nbe (e : Exp α) : Exp α := reify (eval e)
 
 -- Shows decidability of e ~ e'
-theorem correctness (e e' : Exp α) : (convr (e) (e')) ↔ (nbe e = nbe e') :=
+theorem correctness (e e' : Exp α) : (e ~ e') ↔ (nbe e = nbe e') :=
 by
   apply Iff.intro
   · intro h
@@ -81,20 +82,20 @@ by
       aesop
     case mp.app a b c d a_r_b c_r_d _ _ =>
       clear * - a_r_b c_r_d
-      have ac_r_bd : convr (a.app c) (b.app d) := convr.app a_r_b c_r_d
-      exact eval_lemma2 ac_r_bd Exp.id
+      have ac_r_bd : (a ⬝ c) ~ (b ⬝ d) := convr.app a_r_b c_r_d
+      exact convr_eval_eq ac_r_bd Exp.id
 
   · unfold nbe reify
     intro h0
-    have h1 : convr (e) (e.app Exp.id) := (convr.sym convr.id_right)
+    have h1 : e ~ (e ⬝ Exp.id) := (convr.sym convr.id_right)
     refine (convr.trans h1 ?_)
     clear h1
-    have h1 : convr (e.app Exp.id) ((eval e) Exp.id) := eval_lemma1 e Exp.id
+    have h1 : (e ⬝ Exp.id) ~ ((eval e) Exp.id) := app_eval e Exp.id
     refine (convr.trans h1 ?_)
     clear h1
     rewrite [h0]
     clear h0
-    have h0 : convr ((eval e') Exp.id) (e'.app Exp.id) := convr.sym (eval_lemma1 e' Exp.id)
+    have h0 : ((eval e') Exp.id) ~ (e' ⬝ Exp.id) := convr.sym (app_eval e' Exp.id)
     refine (convr.trans h0 ?_)
     clear h0
     exact convr.id_right
@@ -129,27 +130,26 @@ def two  := Exp.elem 2
 def three := Exp.elem 3
 
 -- ((1, 2), ((0, 0), 3)) ~ ((0, 0), (1, (2, (0, 3))))
-#reduce nbe ( (one.app two).app  ((zero.app zero).app three) )
-#reduce nbe ( (zero.app zero).app (one.app (two.app (zero.app three))))
-example : convr
-          ( (one.app two).app  ((zero.app zero).app three) )
-          ( (zero.app zero).app (one.app (two.app (zero.app three)))) :=
+#reduce nbe ( (one ⬝ two) ⬝ ((zero ⬝ zero) ⬝ three) )
+#reduce nbe ( (zero ⬝ zero) ⬝ (one ⬝ (two ⬝ (zero ⬝ three))))
+example : ( (one ⬝ two) ⬝  ((zero ⬝ zero) ⬝ three) )
+        ~ ( (zero ⬝ zero) ⬝ (one ⬝ (two ⬝ (zero ⬝ three)))) :=
   by
-  have h0 : convr (zero.app zero)  zero := convr.id_left
-  have h1 : convr ((zero.app zero).app three) (zero.app three) := convr.app h0 convr.refl
+  have h0 : (zero ⬝ zero) ~ zero := convr.id_left
+  have h1 : ((zero ⬝ zero) ⬝ three) ~ (zero ⬝ three) := convr.app h0 convr.refl
 -- ((1, 2), ((0, 0), 3)) ~ ((1, 2), (0, 3))
-  have h2 : convr ((one.app two).app ((zero.app zero).app three))
-                  ((one.app two).app (zero.app three)) := convr.app convr.refl h1
+  have h2 : ((one ⬝ two) ⬝ ((zero ⬝ zero) ⬝ three))
+          ~ ((one ⬝ two) ⬝ (zero ⬝ three)) := convr.app convr.refl h1
 -- ((1, 2), (0, 3)) ~ (1, (2, (0, 3))
-  have h3 : convr ((one.app two).app (zero.app three))
-                  (one.app (two.app (zero.app three))) := convr.assoc
-  have h4 : convr zero (zero.app zero) := convr.sym h0
+  have h3 : ((one ⬝ two) ⬝ (zero ⬝ three))
+          ~ (one ⬝ (two ⬝ (zero ⬝ three))) := convr.assoc
+  have h4 : zero ~ (zero ⬝ zero) := convr.sym h0
 -- (1, (2, (0, 3)) ~ (0, (1, (2, (0, 3)))
-  have h5 : convr (one.app (two.app (zero.app three)))
-                  (zero.app (one.app (two.app (zero.app three)))) := convr.sym convr.id_left
+  have h5 : (one ⬝ (two ⬝ (zero ⬝ three)))
+          ~ (zero ⬝ (one ⬝ (two ⬝ (zero ⬝ three)))) := convr.sym convr.id_left
 -- (0, (1, (2, (0, 3))) ~ ((0, 0), (1, (2, (0, 3)))
-  have h6 : convr (zero.app (one.app (two.app (zero.app three))))
-                  ((zero.app zero).app (one.app (two.app (zero.app three)))) := convr.app h4 convr.refl
+  have h6 : (zero ⬝ (one ⬝ (two ⬝ (zero ⬝ three))))
+          ~ ((zero ⬝ zero) ⬝ (one ⬝ (two ⬝ (zero ⬝ three)))) := convr.app h4 convr.refl
   clear h0 h1 h4
   apply convr.trans h2
   apply convr.trans h3

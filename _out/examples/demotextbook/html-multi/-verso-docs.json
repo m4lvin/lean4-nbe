@@ -1,0 +1,84 @@
+{"9":
+ "<code>convr.assoc {α : Type} {e e' e'' : Exp α} : convr ((e ⬝ e') ⬝ e'') (e ⬝ (e' ⬝ e''))</code>",
+ "8": "<code>Exp (α : Type) : Type</code>",
+ "7": "<code>_root_.convr {α : Type} : Exp α → Exp α → Prop</code>",
+ "6": "<code><span class=\"literal string\">\" ⬝ \"</span> : String</code>",
+ "59":
+ "<code>_root_.example3' : ((one ⬝ two) ⬝ ((zero ⬝ zero) ⬝ three)) ~ ((zero ⬝ (one ⬝ zero)) ⬝ ((zero ⬝ two) ⬝ (three ⬝ zero)))</code>",
+ "58":
+ "<code>_root_.example2' : ((zero ⬝ (one ⬝ zero)) ⬝ ((zero ⬝ two) ⬝ (three ⬝ zero))) ~ (one ⬝ (two ⬝ (three ⬝ zero)))</code>",
+ "57":
+ "<code class=\"docstring\">Searches environment for definitions or theorems that can solve the goal using `exact`\nwith conditions resolved by `solve_by_elim`.\n\nThe optional `using` clause provides identifiers in the local context that must be\nused by `exact?` when closing the goal.  This is most useful if there are multiple\nways to resolve the goal, and one wants to guide which lemma is used.\n</code>",
+ "56":
+ "<code>_root_.example1' : ((one ⬝ two) ⬝ ((zero ⬝ zero) ⬝ three)) ~ (one ⬝ (two ⬝ (three ⬝ zero)))</code>",
+ "55":
+ "<code>Iff (a b : Prop) : Prop</code><span class=\"sep\"></span><code class=\"docstring\">If and only if, or logical bi-implication. `a ↔ b` means that `a` implies `b` and vice versa.\nBy `propext`, this implies that `a` and `b` are equal and hence any expression involving `a`\nis equivalent to the corresponding expression with `b` instead.\n</code>",
+ "54": "<code>nbe {α : Type} (e : Exp α) : Exp α</code>",
+ "53":
+ "<code>_root_.correctness {α : Type} (e e' : Exp α) : e ~ e' ↔ nbe e = nbe e'</code>",
+ "52": "<code>reify {α : Type} (f : Exp α → Exp α) : Exp α</code>",
+ "51": "<code>_root_.nbe {α : Type} (e : Exp α) : Exp α</code>",
+ "50": "<code>Exp α → Exp α</code>",
+ "5": "<code>Exp.elem {α : Type} : α → Exp α</code>",
+ "49": "<code>_root_.reify {α : Type} (f : Exp α → Exp α) : Exp α</code>",
+ "48":
+ "<code>_root_.app_eval {α : Type} (a b : Exp α) : (a ⬝ b) ~ eval a b</code>",
+ "47":
+ "<code>Eq.{u_1} {α : Sort u_1} : α → α → Prop</code><span class=\"sep\"></span><code class=\"docstring\">The equality relation. It has one introduction rule, `Eq.refl`.\nWe use `a = b` as notation for `Eq a b`.\nA fundamental property of equality is that it is an equivalence relation.\n```\nvariable (α : Type) (a b c d : α)\nvariable (hab : a = b) (hcb : c = b) (hcd : c = d)\n\nexample : a = d :=\n  Eq.trans (Eq.trans hab (Eq.symm hcb)) hcd\n```\nEquality is much more than an equivalence relation, however. It has the important property that every assertion\nrespects the equivalence, in the sense that we can substitute equal expressions without changing the truth value.\nThat is, given `h1 : a = b` and `h2 : p a`, we can construct a proof for `p b` using substitution: `Eq.subst h1 h2`.\nExample:\n```\nexample (α : Type) (a b : α) (p : α → Prop)\n        (h1 : a = b) (h2 : p a) : p b :=\n  Eq.subst h1 h2\n\nexample (α : Type) (a b : α) (p : α → Prop)\n    (h1 : a = b) (h2 : p a) : p b :=\n  h1 ▸ h2\n```\nThe triangle in the second presentation is a macro built on top of `Eq.subst` and `Eq.symm`, and you can enter it by typing `\\t`.\nFor more information: [Equality](https://lean-lang.org/theorem_proving_in_lean4/quantifiers_and_equality.html#equality)\n</code>",
+ "46": "<code>a ~ b</code>",
+ "45":
+ "<code>_root_.convr_eval_eq {α : Type} {a b : Exp α} (h : a ~ b) (c : Exp α) : eval a c = eval b c</code>",
+ "44": "<code>eval {α : Type} : Exp α → Exp α → Exp α</code>",
+ "43":
+ "<code class=\"docstring\">`#reduce &lt;expression&gt;` reduces the expression `&lt;expression&gt;` to its normal form. This\ninvolves applying reduction rules until no further reduction is possible.\n\nBy default, proofs and types within the expression are not reduced. Use modifiers\n`(proofs := true)`  and `(types := true)` to reduce them.\nRecall that propositions are types in Lean.\n\n**Warning:** This can be a computationally expensive operation,\nespecially for complex expressions.\n\nConsider using `#eval &lt;expression&gt;` for simple evaluation/execution\nof expressions.\n</code>",
+ "42": "<code>α</code>",
+ "41":
+ "<code>id.{u} {α : Sort u} (a : α) : α</code><span class=\"sep\"></span><code class=\"docstring\">The identity function. `id` takes an implicit argument `α : Sort u`\n(a type in any universe), and an argument `a : α`, and returns `a`.\n\nAlthough this may look like a useless function, one application of the identity\nfunction is to explicitly put a type on an expression. If `e` has type `T`,\nand `T'` is definitionally equal to `T`, then `@id T' e` typechecks, and Lean\nknows that this expression has type `T'` rather than `T`. This can make a\ndifference for typeclass inference, since `T` and `T'` may have different\ntypeclass instances on them. `show T' from e` is sugar for an `@id T' e`\nexpression.\n</code>",
+ "40": "<code>Exp α</code>",
+ "4": "<code>Exp.id {α : Type} : Exp α</code>",
+ "39": "<code>_root_.eval {α : Type} : Exp α → Exp α → Exp α</code>",
+ "38":
+ "<code>_root_.example3 : ((one ⬝ two) ⬝ ((zero ⬝ zero) ⬝ three)) ~ ((zero ⬝ (one ⬝ zero)) ⬝ ((zero ⬝ two) ⬝ (three ⬝ zero)))</code>",
+ "37":
+ "<code>_root_.example2 : ((zero ⬝ (one ⬝ zero)) ⬝ ((zero ⬝ two) ⬝ (three ⬝ zero))) ~ (one ⬝ (two ⬝ (three ⬝ zero)))</code>",
+ "36":
+ "<code class=\"docstring\">The `sorry` tactic is a temporary placeholder for an incomplete tactic proof,\nclosing the main goal using `exact sorry`.\n\nThis is intended for stubbing-out incomplete parts of a proof while still having a syntactically correct proof skeleton.\nLean will give a warning whenever a proof uses `sorry`, so you aren't likely to miss it,\nbut you can double check if a theorem depends on `sorry` by looking for `sorryAx` in the output\nof the `#print axioms my_thm` command, the axiom used by the implementation of `sorry`.\n</code>",
+ "35":
+ "<code class=\"docstring\">`by tac` constructs a term of the expected type by running the tactic(s) `tac`. </code>",
+ "34": "<code>three : Exp Nat</code>",
+ "33": "<code>zero : Exp Nat</code>",
+ "32": "<code>two : Exp Nat</code>",
+ "31": "<code>one : Exp Nat</code>",
+ "30":
+ "<code>_root_.example1 : ((one ⬝ two) ⬝ ((zero ⬝ zero) ⬝ three)) ~ (one ⬝ (two ⬝ (three ⬝ zero)))</code>",
+ "3": "<code>Exp.app {α : Type} : Exp α → Exp α → Exp α</code>",
+ "29": "<code>_root_.three : Exp Nat</code>",
+ "28": "<code>_root_.two : Exp Nat</code>",
+ "27": "<code>_root_.one : Exp Nat</code>",
+ "26":
+ "<code>Nat : Type</code><span class=\"sep\"></span><code class=\"docstring\">The type of natural numbers, starting at zero. It is defined as an\ninductive type freely generated by \"zero is a natural number\" and\n\"the successor of a natural number is a natural number\".\n\nYou can prove a theorem `P n` about `n : Nat` by `induction n`, which will\nexpect a proof of the theorem for `P 0`, and a proof of `P (succ i)` assuming\na proof of `P i`. The same method also works to define functions by recursion\non natural numbers: induction and recursion are two expressions of the same\noperation from Lean's point of view.\n\n```\nopen Nat\nexample (n : Nat) : n &lt; succ n := by\n  induction n with\n  | zero =&gt;\n    show 0 &lt; 1\n    decide\n  | succ i ih =&gt; -- ih : i &lt; succ i\n    show succ i &lt; succ (succ i)\n    exact Nat.succ_lt_succ ih\n```\n\nThis type is special-cased by both the kernel and the compiler:\n* The type of expressions contains \"`Nat` literals\" as a primitive constructor,\n  and the kernel knows how to reduce zero/succ expressions to nat literals.\n* If implemented naively, this type would represent a numeral `n` in unary as a\n  linked list with `n` links, which is horribly inefficient. Instead, the\n  runtime itself has a special representation for `Nat` which stores numbers up\n  to 2^63 directly and larger numbers use an arbitrary precision \"bignum\"\n  library (usually [GMP](https://gmplib.org/)).\n</code>",
+ "25": "<code>_root_.zero : Exp Nat</code>",
+ "24": "<code>convr {α : Type} : Exp α → Exp α → Prop</code>",
+ "23": "<code><span class=\"literal string\">\" ~ \"</span> : String</code>",
+ "22": "<code>Exp ?m.204</code>",
+ "21":
+ "<code>convr.app {α : Type} {a b c d : Exp α} : convr a b → convr c d → convr (a ⬝ c) (b ⬝ d)</code>",
+ "20": "<code>Exp ?m.141</code>",
+ "2": "<code>Type</code>",
+ "19":
+ "<code>convr.trans {α : Type} {e e' e'' : Exp α} : convr e e' → convr e' e'' → convr e e''</code>",
+ "18": "<code>Exp ?m.106</code>",
+ "17":
+ "<code>convr.sym {α : Type} {e e' : Exp α} : convr e e' → convr e' e</code>",
+ "16": "<code>Exp ?m.87</code>",
+ "15": "<code>convr.refl {α : Type} {e : Exp α} : convr e e</code>",
+ "14": "<code>Exp ?m.77</code>",
+ "13":
+ "<code>convr.id_right {α : Type} {e : Exp α} : convr (e ⬝ Exp.id) e</code>",
+ "12": "<code>Exp ?m.63</code>",
+ "11":
+ "<code>convr.id_left {α : Type} {e : Exp α} : convr (Exp.id ⬝ e) e</code>",
+ "10": "<code>Exp ?m.47</code>",
+ "1": "<code>_root_.Exp (α : Type) : Type</code>",
+ "0":
+ "<code class=\"docstring\">In Lean, every concrete type other than the universes\nand every type constructor other than dependent arrows\nis an instance of a general family of type constructions known as inductive types.\nIt is remarkable that it is possible to construct a substantial edifice of mathematics\nbased on nothing more than the type universes, dependent arrow types, and inductive types;\neverything else follows from those.\nIntuitively, an inductive type is built up from a specified list of constructors.\nFor example, `List α` is the list of elements of type `α`, and is defined as follows:\n```\ninductive List (α : Type u) where\n| nil\n| cons (head : α) (tail : List α)\n```\nA list of elements of type `α` is either the empty list, `nil`,\nor an element `head : α` followed by a list `tail : List α`.\nSee [Inductive types](https://lean-lang.org/theorem_proving_in_lean4/inductive_types.html)\nfor more information.\n</code>"}
