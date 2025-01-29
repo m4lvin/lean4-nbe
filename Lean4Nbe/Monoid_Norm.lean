@@ -9,7 +9,6 @@ inductive Exp (α : Type)
 infix : 100 " ⬝ " => Exp.app
 
 
--- Didn't declare the Setoid instance for this yet
 inductive convr : (Exp α) → (Exp α) → Prop
 | assoc {e e' e'' : Exp α} : convr ((e ⬝ e') ⬝ e'') (e ⬝ (e' ⬝ e''))
 | id_left {e  : Exp α}     : convr ((Exp.id) ⬝ e) (e)

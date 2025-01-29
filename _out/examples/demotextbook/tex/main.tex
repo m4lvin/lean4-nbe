@@ -49,16 +49,18 @@
 
 \mainmatter
 
-\chapter*{Introduction}
+\chapter{Introduction}
 
 For this project, I chose to formalize Peter Dybjer's \hyperlink{"https://www.cs.le.ac.uk/events/mgs2009/courses/courses.html#anchorPeter"}{Normalization-by-Evaluation} slides into Lean4.
 My motivation for doing this was for 2 primary reasons:
+
 \begin{itemize}
 \item It's an interesting normalization-strategy for rewriting systems that leverages on the interplay between the "Object" and "Meta"-levels in a nontrivial manner.\item It also provides a nice oppurtunity for me to further sharpen and apply my Lean4 skills
 \end{itemize}
 
+
 The goal of this document is to walk the reader through both Dybjer's slides and their Lean4 formalization in a step-by-step manner.
-\chapter{Motivation}
+# Motivation
 
 Normalization by Evaluation is a technique whereby we can normalize terms of a given rewrite-system by "evaluating" them into the Meta-level (where normalization occurs)
 followed by "reifying" our normalized term back into the Object-level. In this way, we will be translating our "reduction-based" rewriting-relation into a "reduction-free" equality check
@@ -121,7 +123,7 @@ infix : 100 " ~ " => convr
 
 
 
-The first 3 constructors are the normal Monoid-laws, the next 3 ensure \Verb|~| is an equivalence-relation, and the final ensures it is congruent wrt \Verb|⬝|.
+The first 3 constructors are the normal Monoid-laws, the next 3 ensure \Verb|~| is an equivalence-relation, and the final ensures it is congruent wrt \Verb|app|.
 This gives us the normal Monoid-behavior we expect as the following examples show:
 
 \begin{verbatim}
@@ -309,7 +311,7 @@ def nbe (e : Exp α) : Exp α := reify (eval e)
 
 
 What \Verb|nbe| does is first evaluate \Verb|e| so it gets normalized through function-composition, and then reify's it back into a canonical element of \Verb|[e]~|.
-Thus, we can translate \Verb|a ~ b| into the decidable-problem \Verb|nbe a = nbe} b| which we state as our main correctness-theorem:
+Thus, we can translate \Verb|a ~ b| into the decidable-problem \Verb|nbe a = nbe b| which we state as our main correctness-theorem:
 
 \begin{verbatim}
 theorem correctness (e e' : Exp α) : (e ~ e') ↔ (nbe e = nbe e') :=
@@ -358,6 +360,8 @@ theorem example3'
   exact?
 
 \end{verbatim}
+
+
 
 
 
