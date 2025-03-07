@@ -647,92 +647,6 @@ window.addEventListener("DOMContentLoaded", saveCheckboxesInit);
 }
 
 </style><script>
-      let xref = {"Verso.Genre.Manual.section":
- {"title": "Sections or chapters of the manual",
-  "description": null,
-  "contents":
-  {"index":
-   [{"id": "index",
-     "data": ["Normalization by Evaluation in Lean4", "Index"],
-     "address": "/"}]}},
- "Verso.Genre.Manual.doc.tactic.conv":
- {"title": "Conversion Tactics",
-  "description": "Tatics for performing targeted rewriting of subterms",
-  "contents": {}},
- "Verso.Genre.Manual.doc.tactic":
- {"title": "Tactic Documentation",
-  "description": "Detailed descriptions of tactics",
-  "contents": {}},
- "Verso.Genre.Manual.doc.option":
- {"title": "Compiler options", "description": null, "contents": {}},
- "Verso.Genre.Manual.doc":
- {"title": "Lean constant reference",
-  "description": "Documentation for Lean constants",
-  "contents": {}}};
-let params = new URLSearchParams(document.location.search);
-let domains = params.getAll("domain");
-let name = params.get("name");
-console.log("Domains: " + domains);
-console.log("name: " + name);
-if(name) {
-    let siteRoot = typeof __versoSiteRoot !== 'undefined' ? __versoSiteRoot : "";
-    let options = [];
-    if (domains && domains.length > 0) {
-        for (const i in domains) {
-            let domain = domains[i];
-            console.log('Considering domain ' + domain);
-            if (xref.hasOwnProperty(domain)) {
-                console.log('Found domain ' + domain);
-                let opts = xref[domain];
-                if (opts['contents'].hasOwnProperty(name)) {
-                    options = opts['contents'][name].map(x => Object.assign(x, {'domain': domain}));
-                }
-            }
-        }
-    } else {
-        for (const [dom, opts] of Object.entries(xref)) {
-            if (opts['contents'].hasOwnProperty(name)) {
-                for (const i of opts['contents'][name]) {
-                    options.push(Object.assign(i, {'domain': dom}));
-                }
-            }
-        }
-    }
-
-    if (options.length == 0) {
-        addEventListener('DOMContentLoaded', event => {
-            document.title = "Not found: '" + name + "'";
-            document.querySelector("#title").innerHTML = "Not found: name '" + name + "'";
-            let allDomains = [];
-            for (const d in xref) {
-                allDomains.push(d);
-            }
-            if (domains.length < 1) {
-                domains = allDomains;
-            }
-            document.querySelector("#message").innerHTML = "<p>Searched domains:</p>" + "<ul>" + domains.map(x => "<li><code>" + x + "</code>: " + xref[x]['title'] + "</li>\n").join('') + "</ul>";
-        });
-    } else if (options.length == 1) {
-        let addr = siteRoot + options[0]['address'] + "#" + options[0]['id'];
-        window.location.replace(addr);
-    } else {
-        addEventListener('DOMContentLoaded', event => {
-            document.title = "Ambiguous: '" + name + "'";
-            document.querySelector("#title").innerHTML = "Ambiguous: name '" + name + "'";
-            document.querySelector("#message").innerHTML = "<p>Options:</p><ul>" +
-                options.map((x, idx) => '<li><p><a href="' + siteRoot + x['address'] + '#' + x['id'] + '">From ' + xref[x['domain']]['title'] + '</a></p></li>').join('\n') +
-                "</ul>";
-        });
-    }
-} else {
-    addEventListener('DOMContentLoaded', event => {
-        document.title = "No name provided";
-        document.querySelector("#title").innerHTML = "No name provided";
-        document.querySelector("#message").innerHTML = "<p>This page expects a 'name' query parameter, along with documentation domains.</p>";
-    });
-}
-</script>
-    <script>
       
 window.onload = () => {
 
@@ -897,6 +811,92 @@ window.onload = () => {
   });
 }
 </script>
+    <script>
+      let xref = {"Verso.Genre.Manual.section":
+ {"title": "Sections or chapters of the manual",
+  "description": null,
+  "contents":
+  {"index":
+   [{"id": "index",
+     "data": ["Normalization by Evaluation in Lean4", "Index"],
+     "address": "/"}]}},
+ "Verso.Genre.Manual.doc.tactic.conv":
+ {"title": "Conversion Tactics",
+  "description": "Tatics for performing targeted rewriting of subterms",
+  "contents": {}},
+ "Verso.Genre.Manual.doc.tactic":
+ {"title": "Tactic Documentation",
+  "description": "Detailed descriptions of tactics",
+  "contents": {}},
+ "Verso.Genre.Manual.doc.option":
+ {"title": "Compiler options", "description": null, "contents": {}},
+ "Verso.Genre.Manual.doc":
+ {"title": "Lean constant reference",
+  "description": "Documentation for Lean constants",
+  "contents": {}}};
+let params = new URLSearchParams(document.location.search);
+let domains = params.getAll("domain");
+let name = params.get("name");
+console.log("Domains: " + domains);
+console.log("name: " + name);
+if(name) {
+    let siteRoot = typeof __versoSiteRoot !== 'undefined' ? __versoSiteRoot : "";
+    let options = [];
+    if (domains && domains.length > 0) {
+        for (const i in domains) {
+            let domain = domains[i];
+            console.log('Considering domain ' + domain);
+            if (xref.hasOwnProperty(domain)) {
+                console.log('Found domain ' + domain);
+                let opts = xref[domain];
+                if (opts['contents'].hasOwnProperty(name)) {
+                    options = opts['contents'][name].map(x => Object.assign(x, {'domain': domain}));
+                }
+            }
+        }
+    } else {
+        for (const [dom, opts] of Object.entries(xref)) {
+            if (opts['contents'].hasOwnProperty(name)) {
+                for (const i of opts['contents'][name]) {
+                    options.push(Object.assign(i, {'domain': dom}));
+                }
+            }
+        }
+    }
+
+    if (options.length == 0) {
+        addEventListener('DOMContentLoaded', event => {
+            document.title = "Not found: '" + name + "'";
+            document.querySelector("#title").innerHTML = "Not found: name '" + name + "'";
+            let allDomains = [];
+            for (const d in xref) {
+                allDomains.push(d);
+            }
+            if (domains.length < 1) {
+                domains = allDomains;
+            }
+            document.querySelector("#message").innerHTML = "<p>Searched domains:</p>" + "<ul>" + domains.map(x => "<li><code>" + x + "</code>: " + xref[x]['title'] + "</li>\n").join('') + "</ul>";
+        });
+    } else if (options.length == 1) {
+        let addr = siteRoot + options[0]['address'] + "#" + options[0]['id'];
+        window.location.replace(addr);
+    } else {
+        addEventListener('DOMContentLoaded', event => {
+            document.title = "Ambiguous: '" + name + "'";
+            document.querySelector("#title").innerHTML = "Ambiguous: name '" + name + "'";
+            document.querySelector("#message").innerHTML = "<p>Options:</p><ul>" +
+                options.map((x, idx) => '<li><p><a href="' + siteRoot + x['address'] + '#' + x['id'] + '">From ' + xref[x['domain']]['title'] + '</a></p></li>').join('\n') +
+                "</ul>";
+        });
+    }
+} else {
+    addEventListener('DOMContentLoaded', event => {
+        document.title = "No name provided";
+        document.querySelector("#title").innerHTML = "No name provided";
+        document.querySelector("#message").innerHTML = "<p>This page expects a 'name' query parameter, along with documentation domains.</p>";
+    });
+}
+</script>
     </head>
   <body>
     <label for="toggle-toc" id="toggle-toc-click"><span class="line line1"></span><span class="line line2"></span><span class="line line3"></span></label><div class="with-toc">
@@ -909,7 +909,7 @@ window.onload = () => {
             <div class="split-toc book">
               <div class="title">
                 <label for="--verso-manual-toc-----bookRoot" class="toggle-split-toc"><input type="checkbox" class="toggle-split-toc" id="--verso-manual-toc-----bookRoot"></label><span class=""><a href="../">Cross-Reference Redirection</a></span></div>
-              <table><tr class="current numbered"><td class="num"></td><td><a href="../#Normalization-by-Evaluation-in-Lean4--Introduction">Introduction</a></td></tr><tr class="current numbered"><td class="num"></td><td><a href="../#Normalization-by-Evaluation-in-Lean4--Monoid-Rewriting">Monoid-Rewriting</a></td></tr><tr class="current numbered"><td class="num"></td><td><a href="../#index">Index</a></td></tr></table></div>
+              <table><tr class="current numbered"><td class="num"></td><td><a href="../#Normalization-by-Evaluation-in-Lean4--Introduction">Introduction</a></td></tr><tr class="current numbered"><td class="num"></td><td><a href="../#Normalization-by-Evaluation-in-Lean4--Monoid-Rewriting">Monoid-Rewriting</a></td></tr><tr class="current numbered"><td class="num"></td><td><a href="../#Normalization-by-Evaluation-in-Lean4--GodelT-Rewriting">GodelT-Rewriting</a></td></tr><tr class="current numbered"><td class="num"></td><td><a href="../#index">Index</a></td></tr></table></div>
             </div>
           </div>
         <div class="last"></div>

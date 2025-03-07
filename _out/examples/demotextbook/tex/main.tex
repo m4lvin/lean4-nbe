@@ -366,6 +366,73 @@ theorem example3'
 
 
 
+\chapter{GodelT-Rewriting}
+
+
+
+\section{GodelT Expressions and rewriting}
+
+We now move on to a Combinatory-version of Godel's System T and implement NbE for it as well.
+Here we will be using an Intrinsic encoding (aka "typing ala Church") meaning all Expressions will be well-typed and we won't need an additional "Derivation" type.
+First, we define our Simple-Types:
+
+\begin{verbatim}
+inductive Ty : Type
+| Nat : Ty
+| arrow : Ty → Ty → Ty
+open Ty
+infixr : 100 " ⇒' " => arrow
+
+\end{verbatim}
+
+
+
+Here our base-type is the Natural Numbers while \Verb|arrow| lets us form functions between Simple Types.
+Our Expressions are:
+
+\begin{verbatim}
+inductive ExpT : Ty → Type
+| K {a b : Ty}     :  ExpT (a ⇒' b ⇒' a)
+| S {a b c : Ty}   :  ExpT ((a ⇒' b ⇒' c) ⇒' (a ⇒' b) ⇒' (a ⇒' c))
+| App {a b : Ty}   :  ExpT (a ⇒' b) → ExpT a → ExpT b
+| zero             :  ExpT .Nat
+| succ             :  ExpT (.Nat ⇒' .Nat)
+| recN {a : Ty}    :  ExpT (a ⇒' (.Nat ⇒' a ⇒' a) ⇒' .Nat ⇒' a)
+open ExpT
+infixl : 100 " ⬝ " => App
+
+\end{verbatim}
+
+
+
+That is, our Expressions are either:
+
+\begin{itemize}
+\item Combinators \Verb|K| and \Verb|S|\item Applying two expressions together: \Verb|e₁ ⬝ e₂|\item The Natural number \Verb|zero|\item The successor function \Verb|succ|\item The recursor for Natural numbers: \Verb|recN|
+\end{itemize}
+
+
+From this, we get the following rewriting relation for \Verb|~|:
+
+\begin{verbatim}
+inductive convrT : (ExpT α) → (ExpT α) → Prop
+| refl  : convrT (e) (e)
+| sym   : convrT (e) (e') → convrT (e') (e)
+| trans : convrT (e) (e') → convrT (e') (e'') → convrT (e) (e'')
+| K     : convrT (K ⬝ x ⬝ y) (x)
+| S     : convrT (S ⬝ x ⬝ y ⬝ z) (x ⬝ z ⬝ (y ⬝ z))
+| app   : convrT (a) (b) → convrT (c) (d) → convrT (a ⬝ c) (b ⬝ d)
+| recN_zero : convrT (recN ⬝ e ⬝ f ⬝ .zero) (e)
+--| recN_succ : convrT (recN ⬝ e ⬝ f ⬝ (.succ ⬝ n)) (f ⬝ n ⬝ (recN ⬝ e ⬝ f ⬝ n))
+infix : 100 " ~ " => convrT
+
+\end{verbatim}
+
+
+
+
+
+
 
 
 \chapter{Index}

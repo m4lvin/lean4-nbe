@@ -269,6 +269,52 @@ theorem example3'
   -/
   exact?
 ```
+# GodelT-Rewriting
+
+## GodelT Expressions and rewriting
+We now move on to a Combinatory-version of Godel's System T and implement NbE for it as well.
+Here we will be using an Intrinsic encoding (aka "typing ala Church") meaning all Expressions will be well-typed and we won't need an additional "Derivation" type.
+First, we define our Simple-Types:
+```lean
+inductive Ty : Type
+| Nat : Ty
+| arrow : Ty → Ty → Ty
+open Ty
+infixr : 100 " ⇒' " => arrow
+```
+Here our base-type is the Natural Numbers while `arrow` lets us form functions between Simple Types.
+Our Expressions are:
+```lean
+inductive ExpT : Ty → Type
+| K {a b : Ty}     :  ExpT (a ⇒' b ⇒' a)
+| S {a b c : Ty}   :  ExpT ((a ⇒' b ⇒' c) ⇒' (a ⇒' b) ⇒' (a ⇒' c))
+| App {a b : Ty}   :  ExpT (a ⇒' b) → ExpT a → ExpT b
+| zero             :  ExpT .Nat
+| succ             :  ExpT (.Nat ⇒' .Nat)
+| recN {a : Ty}    :  ExpT (a ⇒' (.Nat ⇒' a ⇒' a) ⇒' .Nat ⇒' a)
+open ExpT
+infixl : 100 " ⬝ " => App
+```
+That is, our Expressions are either:
+  - Combinators `K` and `S`
+  - Applying two expressions together: `e₁ ⬝ e₂`
+  - The Natural number `zero`
+  - The successor function `succ`
+  - The recursor for Natural numbers: `recN`
+
+From this, we get the following rewriting relation for `~`:
+```lean
+inductive convrT : (ExpT α) → (ExpT α) → Prop
+| refl  : convrT (e) (e)
+| sym   : convrT (e) (e') → convrT (e') (e)
+| trans : convrT (e) (e') → convrT (e') (e'') → convrT (e) (e'')
+| K     : convrT (K ⬝ x ⬝ y) (x)
+| S     : convrT (S ⬝ x ⬝ y ⬝ z) (x ⬝ z ⬝ (y ⬝ z))
+| app   : convrT (a) (b) → convrT (c) (d) → convrT (a ⬝ c) (b ⬝ d)
+| recN_zero : convrT (recN ⬝ e ⬝ f ⬝ .zero) (e)
+--| recN_succ : convrT (recN ⬝ e ⬝ f ⬝ (.succ ⬝ n)) (f ⬝ n ⬝ (recN ⬝ e ⬝ f ⬝ n))
+infix : 100 " ~ " => convrT
+```
 
 
 
