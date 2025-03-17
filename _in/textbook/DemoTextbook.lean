@@ -3,7 +3,7 @@ Copyright (c) 2024 Lean FRO LLC. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
 Author: David Thrane Christiansen
 -/
-
+--import Mathlib.Tactic
 import VersoManual
 import DemoTextbook.Exts.Exercises
 
@@ -312,8 +312,246 @@ inductive convrT : (ExpT α) → (ExpT α) → Prop
 | S     : convrT (S ⬝ x ⬝ y ⬝ z) (x ⬝ z ⬝ (y ⬝ z))
 | app   : convrT (a) (b) → convrT (c) (d) → convrT (a ⬝ c) (b ⬝ d)
 | recN_zero : convrT (recN ⬝ e ⬝ f ⬝ .zero) (e)
+-- TO-DO: Fix Verso so it lets me define this constructor!!
 --| recN_succ : convrT (recN ⬝ e ⬝ f ⬝ (.succ ⬝ n)) (f ⬝ n ⬝ (recN ⬝ e ⬝ f ⬝ n))
 infix : 100 " ~ " => convrT
+```
+Some rewriting examples are:
+
+```lean
+-- Identity Combinator
+def I {β : Ty} : ExpT (α ⇒' α) := (@ExpT.S α (β ⇒' α) α) ⬝ .K ⬝ .K
+
+example {x : ExpT α}
+        : ((@I α β) ⬝ x)  ~  x :=
+  by
+  /-
+  apply convrT.trans convrT.S ?_
+  apply convrT.trans convrT.K ?_
+  exact convrT.refl
+  -/
+  -- TO-DO: Try-it! Here
+  sorry
+```
+
+```lean
+-- B Combinator
+def B {a b c : Ty} : ExpT ((b ⇒' c) ⇒' (a ⇒' b) ⇒' a ⇒' c) := .S ⬝ (.K ⬝ .S) ⬝ .K
+
+
+example {x : ExpT (b ⇒' c)}
+        {y : ExpT (a ⇒' b)}
+        {z : ExpT a}
+        : (B ⬝ x ⬝ y ⬝ z)  ~  (x ⬝ (y ⬝ z)) :=
+  by
+  /-
+  unfold B
+  apply convrT.trans ?_ ?_
+  exact (.K ⬝ .S) ⬝ x ⬝ (.K ⬝ x) ⬝ y ⬝ z
+  · apply convrT.app ?_ convrT.refl
+    apply convrT.app ?_ convrT.refl
+    exact convrT.S
+  · apply convrT.trans ?_ ?_
+    exact .S ⬝ (.K ⬝ x) ⬝ y ⬝ z
+    · apply convrT.app ?_ convrT.refl
+      apply convrT.app ?_ convrT.refl
+      apply convrT.app ?_ convrT.refl
+      exact convrT.K
+    · apply convrT.trans ?_ ?_
+      exact (.K ⬝ x ⬝ z) ⬝ (y ⬝ z)
+      · exact convrT.S
+      · apply convrT.app ?_ convrT.refl
+        exact convrT.K
+  -/
+  -- TO-DO: Try-it! here
+  sorry
+```
+
+```lean
+def add (m n : ExpT .Nat) := .recN ⬝ m ⬝ (.K ⬝ .succ) ⬝ n
+
+example : (add m .zero)  ~  m :=
+  by
+  /-
+  exact convrT.recN_zero
+  -/
+  -- TO-DO: "Try-it!" here
+  sorry
+
+example : (add m (.succ ⬝ n))  ~  (.succ ⬝ (add m n)) :=
+  by
+  /-
+  unfold add
+  apply convrT.trans ?_ ?_
+  exact (.K ⬝ .succ) ⬝ n ⬝ (.recN ⬝ m ⬝ (.K ⬝ .succ) ⬝ n)
+  · sorry --exact convrT.recN_succ
+  · apply convrT.app ?_ convrT.refl
+    exact convrT.K
+  -/
+  -- TO-DO: "Try-it!" here
+  sorry
+```
+
+## Normalizing Godel-T Expressions
+In this instance, implementing Evaluation and Reification will be trickier than the previous case because
+we will need to evaluate Types and Terms and Term-Evaluation will depend on reification.
+So, we will implement it in the following order:
+  - Evaluate Simple Types to Meta-Level Types
+  - Reify Meta-level Expressions to Godel-T Expressions
+  - Evaluate Godel-T Expressions to Meta-Level Expressions
+
+So now for our first question in implementing NbE: how will we evaluate Simple Types to the Meta-level?
+
+## Evaluating Simple Types
+To do this, we will make use of Tait's reducibility method and a constructive proof of Weak Normalization to
+extract our NbE algorithm.
+
+With the Reducibility method, we define "Reducibility" in such a way that strengthens our Inductive Hypothesis
+and allows us to prove Weak Normalization. The main idea is: functions will be considered reducible if they map
+reducible inputs to reducible outputs while base terms will be considered reducible if they are Weakly-Normalizing.
+
+From this, we get the following definition for Reducibility:
+
+`Red_{Nat}(e)           = WN_{Nat}(e)`
+
+`Red_{alpha -> beta}(f) = WN_{alpha -> beta}(f) & Forall x : alpha, Red_{alpha}(x) -> Red_{beta}(f x)`
+
+Now, to get our constructive NbE algorithm, we are going to remove all intermediate proof terms (witnessing Weak-Normalization)
+from our `Red` relation and only keep the returned Expressions.
+
+Doing this gives us our Evaluation Function for Simple Types:
+```lean
+def Ty_inter : Ty → Type
+| Ty.Nat => Nat
+
+| Ty.arrow a b => ExpT (a ⇒' b) × (Ty_inter a → Ty_inter b)
+```
+Here:
+  - For `Ty.Nat`: we give it the standard interpretation of Lean's Natural Numbers
+  - For `a ⇒' b`: given a `f : ExpT (a ⇒' b)`, we "glue" onto it a function `F : (Ty_inter a → Ty_inter b)`
+    describing how `f` behaves when applied to normalized-arguments. This will be more clear when we evaluate Godel-T Expressions.
+
+## Reification and Semantic-Application
+In order to Evaluate Godel-T terms, we must first describe how to reify Meta-level terms back to Godel-T terms.
+This is because, when defining the glued-on semantic function `F : (Ty_inter a → Ty_inter b)` we will need reification to be able
+to apply `f : ExpT (a ⇒' b)` to reified semantic arguments.
+
+Defining reification in this instance is simple because of how we evaluate types:
+  - For `n : Ty_inter Ty.Nat = ℕ`: Return the standard numeral `succ ⬝ succ ⬝ ... ⬝ zero  :  ExpT Ty.Nat`
+
+  - For `(f, F) : Ty_inter (a ⇒' b) = ExpT (a ⇒' b) × (Ty_inter a → Ty_inter b)`: Return `f : ExpT (a ⇒' b)`
+
+This give us the following reification function:
+```lean
+def reifyT (a : Ty) (e : Ty_inter a) : ExpT a :=
+/-
+| Ty.Nat, (0 : ℕ) => zero
+| Ty.Nat, n+1     => succ ⬝ (reify Ty.Nat n)
+
+| Ty.arrow a b, (f, F) => f
+-/
+by
+  cases a
+  case Nat =>
+    induction e
+    case zero           => exact .zero
+    case succ n reify_n => exact (.succ ⬝ reify_n)
+  case arrow a b        => exact e.fst
+```
+In addition, we will need to define application on the Meta-level where our glued-on function `F : (Ty_inter a → Ty_inter b)`
+comes into play:
+  - For `(f, F) : Ty_inter (a ⇒' b) = ExpT (a ⇒' b) × (Ty_inter a → Ty_inter b)` and `e' : Ty_inter a`:  Return `F e' : Ty_inter b`
+
+which gives us:
+```lean
+def appsem {a b : Ty} (t : Ty_inter (a ⇒' b)) (e' : Ty_inter a) : Ty_inter b := (t.snd e')
+```
+
+## Evaluating Godel-T Expressions
+With all of the constituents in place, we are finally able to Evaluate Godel-T Expressions to Meta-level terms.
+Before giving the formal definition, we first describe how the Evaluation works on an example to give some intuition.
+
+For `zero : ExpT Ty.Nat` and `succ : ExpT (Ty.Nat ⇒' Ty.Nat)`, these will get their standard translations of `0 : ℕ` and `λ n : ℕ ↦ n+1`.
+
+For a generic function `f : ExpT (α =>' β)`, we are going to keep applying `f` to reified semantic-arguments until
+`f ⬝ (reify x1) ⬝ ... ⬝ (reify xn)` is fully-applied, then we will use `f`'s standard-translation on `x1, ..., xn`. This will in-effect
+capture all of `f`'s `~`-behavior into one big tuple which is how `F : Ty_inter a → Ty_inter b` works.
+
+We illustrate this with the exampe ` S :  ExpT ((a ⇒' b ⇒' c) ⇒' (a ⇒' b) ⇒' (a ⇒' c))`.
+
+The first step is to evalute `S`'s type to the Meta-level, for readibility let:
+
+`τ := (a ⇒' b ⇒' c) ⇒' (a ⇒' b) ⇒' (a ⇒' c)`
+
+`τ' := (a ⇒' b) ⇒' (a ⇒' c)`
+
+`τ'' := a ⇒' c`
+
+and
+
+`⟦ ⬝ ⟧ := Ty_inter`
+
+Then we get:
+
+`⟦τ⟧ = ExpT τ × (⟦a ⇒' b ⇒' c⟧ → ⟦τ'⟧)`
+
+`   = ExpT τ × (⟦a ⇒' b ⇒' c⟧ → (ExpT τ' × (⟦a ⇒' b⟧ → ⟦τ''⟧)))`
+
+`   = ExpT τ × (⟦a ⇒' b ⇒' c⟧ → (ExpT τ' × (⟦a ⇒' b⟧ → (ExpT τ'' × (⟦a⟧ → ⟦c⟧)))))`
+
+Now for describing each of the components: let `x : ⟦a ⇒' b ⇒' c⟧, y : ⟦a ⇒' b⟧, z : ⟦a⟧`
+
+- `ExpT τ`: This is `S` applied to no arguments, so `S : ExpT τ`
+
+- `ExpT τ'`: This is `S` applied to 1 reified-argument, so `S ⬝ (reify x) : ExpT τ'`
+
+- `ExpT τ''`: This is `S` applied to 2 reified-arguments, so `S ⬝ (reify x) ⬝ (reify y) : ExpT τ''`
+
+- `⟦a⟧ → ⟦c⟧`: This is `S` fully-applied to 3 reified-arguments, so `S ⬝ (reify x) ⬝ (reify y) ⬝ (reify z) : ⟦c⟧`.
+  However, since `S` is fully-applied, we may "semantically-unfold" this one-step to get: `appsem (appsem x z) (appsem y z) : ⟦c⟧`
+
+Putting this all together, we get the semantic-evaluation for `S`:
+
+`ExpT_inter S`
+`=`
+
+  `(S,`
+
+   `(λ x ↦ (S ⬝ (reify (a⇒'b⇒'c) x),`
+
+   `(λ y ↦ (S ⬝ (reify (a⇒'b⇒'c) x) ⬝ (reify (a⇒'b) y),`
+
+   `(λ z ↦ appsem (appsem x z) (appsem y z)))))))`
+
+Through this, we can see that our evaluation of GodelT expressions is to keep applying them to reified-arguments
+until we can reduce it at the Meta-level.
+
+Repeating this for our other constructors finally gives us Term-evaluation:
+```lean
+def ExpT_inter (a : Ty) : (e : ExpT a) → Ty_inter a
+| @ExpT.K a b => (.K,
+            (λ p ↦ (.K ⬝ (reifyT a p),
+            (λ q ↦ p))))
+
+| @ExpT.S a b c => (.S,
+              (λ x ↦ (.S ⬝ (reifyT (a⇒'b⇒'c) x),
+              (λ y ↦ (.S ⬝ (reifyT (a⇒'b⇒'c) x) ⬝ (reifyT (a⇒'b) y),
+              (λ z ↦ appsem (appsem x z) (appsem y z)))))))
+| @ExpT.App a b f e  => appsem (ExpT_inter (a ⇒' b) f) (ExpT_inter a e)
+
+| _ => sorry
+
+-- TO-DO: Fix Verso so I can implement the rest of this Definition!!
+/-
+| ExpT.zero          => (0 : Nat)
+
+| ExpT.succ          => (.succ,
+                   (λ n : Nat ↦ n+1) )
+| @ExpT.recN a       => (.recN,
+                   (λ p ↦ (.recN ⬝ (reifyT a p),
+                   (λ q ↦ (.recN ⬝ (reifyT a p) ⬝ (reifyT (.Nat⇒'a⇒'a) q),
+                   (λ n0 ↦ Nat.rec p (λ n r ↦ appsem (appsem q n) r) n0))))))
+-/
 ```
 
 
