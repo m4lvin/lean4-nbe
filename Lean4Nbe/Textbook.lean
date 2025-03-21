@@ -11,6 +11,7 @@ open Verso.Genre Manual
 open DemoTextbook.Exts (lean)
 
 set_option pp.rawOnError true
+set_option maxRecDepth 1000
 
 #doc (Manual) "Normalization by Evaluation in Lean4" =>
 
@@ -312,8 +313,7 @@ inductive convrT : (ExpT α) → (ExpT α) → Prop
 | S     : convrT (S ⬝ x ⬝ y ⬝ z) (x ⬝ z ⬝ (y ⬝ z))
 | app   : convrT (a) (b) → convrT (c) (d) → convrT (a ⬝ c) (b ⬝ d)
 | recN_zero : convrT (recN ⬝ e ⬝ f ⬝ .zero) (e)
--- TO-DO: Fix Verso so it lets me define this constructor!!
---| recN_succ : convrT (recN ⬝ e ⬝ f ⬝ (.succ ⬝ n)) (f ⬝ n ⬝ (recN ⬝ e ⬝ f ⬝ n))
+| recN_succ : convrT (recN ⬝ e ⬝ f ⬝ (.succ ⬝ n)) (f ⬝ n ⬝ (recN ⬝ e ⬝ f ⬝ n))
 infix : 100 " ~ " => convrT
 ```
 Some rewriting examples are:
@@ -539,10 +539,6 @@ def ExpT_inter (a : Ty) : (e : ExpT a) → Ty_inter a
               (λ z ↦ appsem (appsem x z) (appsem y z)))))))
 | @ExpT.App a b f e  => appsem (ExpT_inter (a ⇒' b) f) (ExpT_inter a e)
 
-| _ => sorry
-
--- TO-DO: Fix Verso so I can implement the rest of this Definition!!
-/-
 | ExpT.zero          => (0 : Nat)
 
 | ExpT.succ          => (.succ,
@@ -551,7 +547,6 @@ def ExpT_inter (a : Ty) : (e : ExpT a) → Ty_inter a
                    (λ p ↦ (.recN ⬝ (reifyT a p),
                    (λ q ↦ (.recN ⬝ (reifyT a p) ⬝ (reifyT (.Nat⇒'a⇒'a) q),
                    (λ n0 ↦ Nat.rec p (λ n r ↦ appsem (appsem q n) r) n0))))))
--/
 ```
 
 
